@@ -1,0 +1,1 @@
+The goal of this assignment is to design and implement a native desktop GUI application for the fictitious company presented in the instructions. The chosen company is called *Picko* and is a local pizzeria. The application we are creating is meant to be used by the employees of the company to create new orders which they receive through the telephone from customers.
