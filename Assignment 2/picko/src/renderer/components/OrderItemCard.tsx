@@ -1,29 +1,17 @@
 import React from 'react';
-import { OrderItem, Size } from '../context/OrderContext';
+import { OrderItem } from '../context/OrderContext';
 import { MdContentCopy, MdEdit, MdDelete } from 'react-icons/md';
+import { getOrderItemTotal, getPizzaSizeText } from '../utils/util';
 
 interface OrderItemCardProps {
   item: OrderItem;
 }
 
 const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
-  const getSizeText = (size: Size | undefined) => {
-    switch (size) {
-      case 's':
-        return 'Mala';
-      case 'm':
-        return 'Srednja';
-      case 'l':
-        return 'Velika';
-      default:
-        return 'Mala';
-    }
-  };
-
   return (
-    <div className="block w-full rounded-lg border border-gray-300 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+    <div className="relative block w-full rounded-lg border border-gray-300 bg-white py-3 pl-6 pr-3 dark:border-gray-700 dark:bg-gray-800">
       <span className="mb-1 flex items-center justify-between">
-        <h3 className="text-l font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           {item.quantity}x {item.pizza.name}
         </h3>
         {/* Header Buttons */}
@@ -51,6 +39,9 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
           </button>
         </span>
       </span>
+      <div className="font-normal text-gray-700 dark:text-gray-400">
+        Velikost: {getPizzaSizeText(item.pizza.size)}
+      </div>
       {!!item.removedToppings?.length && (
         <div className="font-normal text-gray-700 dark:text-gray-400">
           Odstrani:{' '}
@@ -63,14 +54,14 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
           ? item.toppings.map((topping) => topping.name).join(', ')
           : 'Brez dodatkov'}
       </div>
-      <div className="font-normal text-gray-700 dark:text-gray-400">
-        Velikost: {getSizeText(item.pizza.size)}
-      </div>
-      {item.pizza.student && (
+      {item.student && (
         <div className="font-normal text-gray-700 dark:text-gray-400">
           Študentski boni: Da
         </div>
       )}
+      <div className="flex justify-end text-lg font-semibold text-gray-900 dark:text-white">
+        {getOrderItemTotal(item)} €
+      </div>
     </div>
   );
 };

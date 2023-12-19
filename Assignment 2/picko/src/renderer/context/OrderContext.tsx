@@ -1,12 +1,23 @@
 import React, { createContext, useContext, useState } from 'react';
 
 export type Size = 's' | 'm' | 'l';
+export type PaymentMethod = 'cash' | 'card';
+export type StatusType =
+  | 'accepted'
+  | 'preparation'
+  | 'prepared'
+  | 'delivery'
+  | 'delivered';
+
+export interface Status {
+  name: StatusType;
+  createdAt: Date;
+}
 export interface Pizza {
   id: number;
   name: string;
-  basePrice: number;
+  price: number;
   size?: Size;
-  student?: boolean;
   defaultToppings: Topping[];
 }
 export interface Topping {
@@ -19,13 +30,18 @@ export interface OrderItem {
   removedToppings?: Topping[];
   toppings: Topping[];
   quantity: number;
+  student?: boolean;
 }
 export interface Order {
-  customerName?: string;
-  deliveryAddress?: string;
+  customerName: string;
+  deliveryAddress: string;
   phoneNumber?: string;
+  paymentMethod: PaymentMethod;
+  creditCardNumber?: string;
   items: OrderItem[];
-  createdAt?: Date;
+  statuses?: Status[];
+  createdAt: Date;
+  note?: string;
 }
 interface OrderContextType {
   orders: Order[];

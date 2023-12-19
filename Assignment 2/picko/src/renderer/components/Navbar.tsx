@@ -14,16 +14,14 @@ const Navbar = () => {
         <MdHomeFilled className={`text-2xl ${textColorClass}`} />
       </button>
 
-      <div className="flex items-center gap-4">
-        <button
-          className="flex items-center whitespace-nowrap rounded-md bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 font-medium text-white"
-          tabIndex={0}
-          onClick={() => navigate('/order')}
-        >
-          <MdAdd className="mr-2 inline-block" />
-          Novo naročilo
-        </button>
-      </div>
+      <button
+        className="flex items-center whitespace-nowrap rounded-md bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2 font-medium text-white"
+        tabIndex={0}
+        onClick={() => navigate('/order')}
+      >
+        <MdAdd className="mr-2 inline-block" />
+        Novo naročilo
+      </button>
     </nav>
   );
 };
