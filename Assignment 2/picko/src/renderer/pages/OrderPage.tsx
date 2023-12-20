@@ -287,7 +287,7 @@ const OrderPage = () => {
 
       {/* Overlay */}
       <div
-        className={`absolute inset-0 z-30 bg-black bg-opacity-50 transition-opacity ${
+        className={`absolute inset-0 z-30 bg-black bg-opacity-50 transition-opacity sm:z-0 ${
           isSidebarOpen ? 'opacity-100' : 'opacity-0'
         } ${isSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
         onClick={toggleSidebar}
@@ -295,7 +295,7 @@ const OrderPage = () => {
 
       {/* Summary Sidebar */}
       <div
-        className={`absolute inset-y-0 right-0 z-40 transform ${
+        className={`absolute inset-y-0 right-0 z-40 transform sm:z-0 ${
           isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
         } transition-transform duration-300 ease-in-out sm:sticky sm:top-0 sm:col-span-5 sm:translate-x-0 md:col-span-4 lg:col-span-3`}
       >
