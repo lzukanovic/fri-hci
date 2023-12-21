@@ -103,7 +103,7 @@ const OrderPage = () => {
 
   return (
     <div
-      className="relative grid h-screen grid-cols-12 overflow-hidden"
+      className="relative grid h-screen grid-cols-12 overflow-hidden bg-white dark:bg-gray-800 dark:text-white"
       style={{ height: `calc(100vh - 73px` }}
     >
       {/* <button
@@ -164,11 +164,10 @@ const OrderPage = () => {
           </div>
           {/* Phone Number */}
           <div className="mb-4">
-            <label
-              htmlFor="customerPhoneNumber"
-              className="mb-2 block text-sm dark:text-white"
-            >
-              <span className="mr-1 font-medium text-gray-900">Telefon</span>
+            <label htmlFor="customerPhoneNumber" className="mb-2 block text-sm">
+              <span className="mr-1 font-medium text-gray-900 dark:text-white">
+                Telefon
+              </span>
               <span className="text-gray-400">(opcijsko)</span>
             </label>
             <div className="relative">
@@ -204,7 +203,7 @@ const OrderPage = () => {
               />
               <label
                 htmlFor="paymentMethod-2"
-                className="ms-2 w-full py-4 text-sm font-medium text-gray-900 dark:text-gray-300"
+                className="ms-2 w-full py-4 text-sm font-medium text-gray-900 dark:text-gray-200"
               >
                 Gotovina
               </label>
@@ -222,7 +221,7 @@ const OrderPage = () => {
                 htmlFor="paymentMethod-1"
                 className="ms-2 flex flex-1 flex-wrap items-center py-4"
               >
-                <span className="me-4 text-sm font-medium text-gray-900 dark:text-gray-300">
+                <span className="me-4 text-sm font-medium text-gray-900 dark:text-gray-200">
                   Kartica
                 </span>
                 {/* Credit Card Number */}

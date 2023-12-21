@@ -47,7 +47,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="relative flex items-center justify-between border-b-[1px] border-gray-200 bg-white p-4">
+    <nav className="relative flex items-center justify-between border-b-[1px] border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
       <button onClick={() => navigate('/')}>
         <MdHomeFilled className={`text-2xl ${textColorClass}`} />
       </button>

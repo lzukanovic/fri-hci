@@ -18,21 +18,21 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({ item }) => {
         <span className="flex items-center">
           <button
             type="button"
-            className="me-2 inline-flex items-center rounded-lg bg-white p-2.5 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:hover:bg-blue-500 dark:focus:ring-blue-800"
+            className="ms-2 inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
           >
             <MdContentCopy />
             <span className="sr-only">Podvojite izdelek</span>
           </button>
           <button
             type="button"
-            className="me-2 inline-flex items-center rounded-lg bg-white p-2.5 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:hover:bg-blue-500 dark:focus:ring-blue-800"
+            className="ms-2 inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
           >
             <MdEdit />
             <span className="sr-only">Uredite izdelek</span>
           </button>
           <button
             type="button"
-            className="me-2 inline-flex items-center rounded-lg bg-white p-2.5 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:hover:bg-blue-500 dark:focus:ring-blue-800"
+            className="ms-2 inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
           >
             <MdDelete />
             <span className="sr-only">Odstranite izdelek</span>

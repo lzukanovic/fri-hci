@@ -9,7 +9,7 @@ const HomePage = () => {
 
   return (
     <div
-      className="grid h-screen grid-cols-12"
+      className="grid h-screen grid-cols-12 bg-white dark:bg-gray-800 dark:text-white"
       style={{ height: `calc(100vh - 73px` }}
     >
       {/* Main Content */}

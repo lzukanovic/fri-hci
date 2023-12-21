@@ -3,7 +3,7 @@ import { MdAddBox } from 'react-icons/md';
 const OrderItemCardNew = () => {
   // TODO: Use accent color on hover
   return (
-    <button className="block w-full rounded-lg border border-dashed border-gray-300 p-6 text-gray-300 transition-colors hover:bg-gray-100 hover:bg-opacity-50 hover:text-gray-500 dark:border-gray-700 dark:hover:bg-gray-700">
+    <button className="block w-full rounded-lg border border-dashed border-gray-300 p-6 text-gray-300 transition-colors hover:bg-gray-100 hover:bg-opacity-50 hover:text-gray-500 dark:border-gray-700 dark:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-gray-200">
       <MdAddBox className="mx-auto text-4xl" />
     </button>
   );

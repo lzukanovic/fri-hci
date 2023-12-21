@@ -24,7 +24,7 @@ const SummarySidebar: React.FC<SummarySidebarProps> = ({
   };
 
   return (
-    <div className="h-full w-full overflow-y-auto border-l p-4">
+    <div className="h-full w-full overflow-y-auto border-l-[1px] border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
       <h1 className="mb-8 text-2xl font-semibold">Podrobnosti naročila</h1>
       {order && hasOrderData() ? (
         <>
@@ -79,7 +79,7 @@ const SummarySidebar: React.FC<SummarySidebarProps> = ({
                     </span>
                     <span>{item.quantity * item.pizza.price} €</span>
                   </div>
-                  <ul className="text-gray-700">
+                  <ul className="text-gray-700 dark:text-gray-400">
                     <li>Velikost: {getPizzaSizeText(item.pizza.size)}</li>
                     <li className="flex justify-between">
                       <span>
