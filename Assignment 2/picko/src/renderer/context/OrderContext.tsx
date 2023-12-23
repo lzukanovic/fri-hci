@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 
+type UUID = string;
 export type Size = 's' | 'm' | 'l';
 export type PaymentMethod = 'cash' | 'card';
 export type StatusType =
@@ -8,31 +9,55 @@ export type StatusType =
   | 'prepared'
   | 'delivery'
   | 'delivered';
+export type PizzaType =
+  | 'margarita'
+  | 'classic'
+  | 'vegetarian'
+  | 'country'
+  | 'karst'
+  | 'seafood';
+export type ToppingType =
+  | 'corn'
+  | 'egg'
+  | 'artichoke'
+  | 'zucchini'
+  | 'sourCream'
+  | 'onion'
+  | 'prosciutto'
+  | 'pepper'
+  | 'cheese'
+  | 'tomato'
+  | 'ham'
+  | 'mushrooms'
+  | 'tuna'
+  | string; // Allows for custom toppings as strings
 
 export interface Status {
   name: StatusType;
   createdAt: Date;
 }
 export interface Pizza {
-  id: number;
-  name: string;
-  price: number;
-  size?: Size;
-  defaultToppings: Topping[];
+  name: PizzaType;
+  basePrice: number;
+  size: Size;
+  defaultToppings: DefaultTopping[];
 }
 export interface Topping {
-  id: number;
-  name: string;
+  name: ToppingType;
+  customDisplayName?: string;
   price: number;
 }
+export type DefaultTopping = Omit<Topping, 'customDisplayName' | 'price'>;
 export interface OrderItem {
+  id: UUID;
   pizza: Pizza;
-  removedToppings?: Topping[];
-  toppings: Topping[];
+  removedToppings?: DefaultTopping[];
+  addedToppings: Topping[];
   quantity: number;
   student?: boolean;
 }
 export interface Order {
+  id: UUID;
   customerName: string;
   deliveryAddress: string;
   phoneNumber?: string;

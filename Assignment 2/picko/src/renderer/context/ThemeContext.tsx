@@ -32,7 +32,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     const updateThemeClass = (theme: Theme) => {
-      const root = document.getElementById('root') as HTMLElement;
+      const root = document.getElementsByTagName('body')[0] as HTMLElement;
       root.classList.remove('light', 'dark', 'system');
       root.classList.add(theme);
     };

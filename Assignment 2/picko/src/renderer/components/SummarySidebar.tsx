@@ -2,13 +2,19 @@ import React from 'react';
 import { Order } from '../context/OrderContext';
 import { MdCreditCard, MdPayments, MdOutlineMap, MdCall } from 'react-icons/md';
 import {
-  getCreditCardNumberDisplay,
-  getExtraToppingsTotal,
+  getOrderItemPizzaPrice,
+  getOrderItemToppingsPrice,
   getOrderTotal,
+  getOrderStudentDiscountCount,
+  getOrderStudentDiscount,
+} from '../utils/order.util';
+import {
+  getCreditCardNumberDisplay,
+  getPizzaNameDisplay,
   getPizzaSizeText,
-  getStudentDiscountCount,
-  getStudentDiscountTotal,
-} from '../utils/util';
+  getPriceDifferenceDisplay,
+  getToppingNameDisplay,
+} from '../utils/display.util';
 
 interface SummarySidebarProps {
   order?: Order;
@@ -66,42 +72,52 @@ const SummarySidebar: React.FC<SummarySidebarProps> = ({
               <li className="mb-2">
                 <div className="flex justify-between">
                   <span>
-                    {getStudentDiscountCount(order)}x Študentski boni{' '}
+                    {getOrderStudentDiscountCount(order)}x Študentski boni{' '}
                   </span>
-                  <span>-{getStudentDiscountTotal(order)} €</span>
+                  <span>{getOrderStudentDiscount(order)} €</span>
                 </div>
               </li>
               {order.items.map((item, index) => (
                 <li key={index} className="mb-2">
                   <div className="flex justify-between">
                     <span>
-                      {item.quantity}x {item.pizza.name}
+                      {item.quantity}x {getPizzaNameDisplay(item.pizza.name)}
                     </span>
-                    <span>{item.quantity * item.pizza.price} €</span>
+                    <span>{getOrderItemPizzaPrice(item)} €</span>
                   </div>
                   <ul className="text-gray-700 dark:text-gray-400">
                     <li>Velikost: {getPizzaSizeText(item.pizza.size)}</li>
-                    <li className="flex justify-between">
-                      <span>
-                        Dodatki:{' '}
-                        {item.toppings.length > 0
-                          ? item.toppings
-                              .map((topping) => topping.name)
-                              .join(', ')
-                          : 'Brez dodatkov'}
-                      </span>
-                      {item.toppings.length > 0 && (
-                        <span>+{getExtraToppingsTotal(item.toppings)}€</span>
-                      )}
-                    </li>
                     {!!item.removedToppings?.length && (
                       <li>
                         Odstrani:{' '}
                         {item.removedToppings
-                          .map((topping) => topping.name)
+                          .map((topping) => getToppingNameDisplay(topping.name))
                           .join(', ')}
                       </li>
                     )}
+                    <li className="flex justify-between">
+                      <span>
+                        Dodatki:{' '}
+                        {item.addedToppings.length > 0
+                          ? item.addedToppings
+                              .map((addedToppings) =>
+                                getToppingNameDisplay(
+                                  addedToppings.name,
+                                  addedToppings.customDisplayName,
+                                ),
+                              )
+                              .join(', ')
+                          : 'Brez dodatkov'}
+                      </span>
+                      {item.addedToppings.length > 0 && (
+                        <span>
+                          {getPriceDifferenceDisplay(
+                            getOrderItemToppingsPrice(item),
+                          )}
+                          €
+                        </span>
+                      )}
+                    </li>
                   </ul>
                 </li>
               ))}

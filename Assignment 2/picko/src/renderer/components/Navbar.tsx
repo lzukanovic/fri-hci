@@ -7,8 +7,7 @@ import {
 } from 'react-icons/md';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Dropdown } from 'flowbite-react';
-import { Theme, useTheme } from '../context/ThemeContext';
-import { useState } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -30,7 +29,7 @@ const Navbar = () => {
         className="inline-flex items-center rounded-s-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:z-10 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
         type="button"
       >
-        <MdLightMode />
+        {theme === 'light' ? <MdDarkMode /> : <MdLightMode />}
       </button>
     );
   };
@@ -49,7 +48,9 @@ const Navbar = () => {
   return (
     <nav className="relative flex items-center justify-between border-b-[1px] border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
       <button onClick={() => navigate('/')}>
-        <MdHomeFilled className={`text-2xl ${textColorClass}`} />
+        <MdHomeFilled
+          className={`text-2xl transition-colors ${textColorClass}`}
+        />
       </button>
 
       <div className="flex items-center gap-4">
