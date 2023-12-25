@@ -24,7 +24,7 @@ import {
   DEFAULT_PIZZA_DICTIONARY,
 } from '../constants/pizza.constant';
 import { DEFAULT_TOPPINGS } from '../constants/topping.constant';
-import { NIL } from 'uuid';
+import { v4 as uuidv4, NIL } from 'uuid';
 
 interface OrderItemModalProps {
   item: OrderItem | null | undefined;
@@ -169,6 +169,10 @@ const OrderItemModal: React.FC<OrderItemModalProps> = ({
 
     // callback
     if (save) {
+      // create id for new item
+      if (isNewItem) {
+        currentItem!.id = uuidv4();
+      }
       onClose(currentItem);
     } else {
       onClose();
@@ -238,7 +242,7 @@ const OrderItemModal: React.FC<OrderItemModalProps> = ({
   ]);
 
   return (
-    <Modal show={show} size="xl" onClose={onCloseModal} popup>
+    <Modal show={show} size="xl" onClose={() => onCloseModal()} popup>
       <Modal.Header className="p-4 md:p-5">
         <div className="text-xl font-semibold text-gray-900 dark:text-white">
           {isNewItem ? 'Dodaj' : 'Uredi'} izdelek

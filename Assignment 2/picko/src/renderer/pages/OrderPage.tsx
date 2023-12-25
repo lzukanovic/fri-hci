@@ -1,5 +1,11 @@
-import { useState } from 'react';
-import { Order, OrderItem, useOrderContext } from '../context/OrderContext';
+import { useEffect, useState } from 'react';
+import {
+  CreditCard,
+  Order,
+  OrderItem,
+  PaymentMethod,
+  useOrderContext,
+} from '../context/OrderContext';
 import { useNavigate } from 'react-router-dom';
 import SummarySidebar from '../components/SummarySidebar';
 import { MdCreditCard, MdCall, MdCalendarMonth } from 'react-icons/md';
@@ -9,6 +15,8 @@ import OrderItemModal from '../components/OrderItemModal';
 import { DEFAULT_PIZZAS } from '../constants/pizza.constant';
 import { DEFAULT_TOPPINGS } from '../constants/topping.constant';
 import { v4 as uuidv4, NIL } from 'uuid';
+import { useForm } from 'react-hook-form';
+import { isEqual } from 'lodash';
 
 // Add mock data to the order
 const mockOrder: Order = {
@@ -17,7 +25,11 @@ const mockOrder: Order = {
   deliveryAddress: 'Prešernova cesta 13, Ljubljana',
   phoneNumber: '040 123 456',
   paymentMethod: 'card',
-  creditCardNumber: '1234-1234-1234-1234',
+  creditCard: {
+    number: '1234-1234-1234-1234',
+    expiration: '12/23',
+    cvv: '031',
+  },
   items: [
     {
       id: uuidv4(),
@@ -49,16 +61,42 @@ const defaultOrder: Order = {
 
 const OrderPage = () => {
   const navigate = useNavigate();
-  const [currentOrder, setCurrentOrder] = useState<Order>(mockOrder);
+  const { addOrder } = useOrderContext();
+
+  const [currentOrder, setCurrentOrder] = useState<Order>(defaultOrder);
   const [currentOrderItem, setCurrentOrderItem] = useState<OrderItem>();
+
+  const {
+    register,
+    watch,
+    trigger,
+    formState: { errors },
+  } = useForm<Order>({
+    defaultValues: {
+      customerName: '',
+      deliveryAddress: '',
+      phoneNumber: '',
+      paymentMethod: 'cash',
+      creditCard: {
+        number: '',
+        expiration: '',
+        cvv: '',
+      },
+      note: '',
+    },
+  });
+  const watchedOrderMetadata = watch();
+  const isCreditCardChecked = watch('paymentMethod') === 'card';
+
+  const [isOrderItemsInvalid, setIsOrderItemsInvalid] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
-  const { addOrder } = useOrderContext();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Order Item Card Handlers
   const updateOrCreateOrderItem = (item: OrderItem) => {
     const existingItem = currentOrder.items.find((i) => i.id === item.id);
     if (existingItem) {
@@ -87,17 +125,92 @@ const OrderPage = () => {
     setCurrentOrder({ ...currentOrder, items: updatedItems });
   };
 
-  // TODO: Function to finalize and save the order
-  // const finalizeOrder = () => {
-  //   const finalizedOrder = {
-  //     ...currentOrder,
-  //     createdAt: new Date(),
-  //   };
+  // Function to finalize and save the order
+  const finalizeOrder = () => {
+    // Validation
+    validateEverything();
+    if (Object.keys(errors).length != 0) return;
 
-  //   addOrder(finalizedOrder);
-  //   setCurrentOrder(defaultOrder); // Reset current order
-  //   navigate('/summary');
-  // };
+    if (currentOrder.items.length === 0) {
+      setIsOrderItemsInvalid(true);
+      return;
+    }
+
+    const createdAt = new Date();
+    const finalizedOrder: Order = {
+      ...currentOrder,
+      id: uuidv4(),
+      createdAt,
+      statuses: [
+        {
+          name: 'created',
+          createdAt,
+        },
+      ],
+    };
+
+    addOrder(finalizedOrder);
+    setCurrentOrder(defaultOrder); // Reset current order
+    navigate('/');
+  };
+
+  // Update current order on form change
+  useEffect(() => {
+    const data: Order = {
+      ...currentOrder,
+      customerName: watchedOrderMetadata.customerName,
+      deliveryAddress: watchedOrderMetadata.deliveryAddress,
+      phoneNumber: watchedOrderMetadata.phoneNumber,
+      paymentMethod: watchedOrderMetadata.paymentMethod,
+      creditCard: {
+        number: watchedOrderMetadata.creditCard?.number,
+        expiration: watchedOrderMetadata.creditCard?.expiration,
+        cvv: watchedOrderMetadata.creditCard?.cvv,
+      },
+      note: watchedOrderMetadata.note,
+      items: currentOrder.items,
+    };
+
+    if (!isEqual(currentOrder, data)) {
+      setCurrentOrder(data);
+    }
+  }, [watchedOrderMetadata]);
+
+  // Update validation if payment method changes
+  useEffect(() => {
+    validateCreditCardFields();
+  }, [isCreditCardChecked]);
+
+  // Form validation
+  const validateEverything = async () => {
+    await validateField('customerName');
+    await validateField('deliveryAddress');
+    await validateField('phoneNumber');
+    await validateField('paymentMethod');
+    if (isCreditCardChecked) {
+      await validateCreditCardFields();
+    }
+  };
+  const validateField = async (fieldName: keyof Order) => {
+    await trigger(fieldName);
+  };
+  const validateCreditCardFields = async () => {
+    await trigger('creditCard.number');
+    await trigger('creditCard.expiration');
+    await trigger('creditCard.cvv');
+  };
+
+  const getFieldStyle = (fieldName: keyof Order) => {
+    return fieldStyle(!!errors[fieldName]);
+  };
+  const getCreditCardFieldStyle = (fieldName: keyof CreditCard) => {
+    return fieldStyle(!!errors.creditCard?.[fieldName]);
+  };
+  const fieldStyle = (invalid: boolean) => {
+    return invalid
+      ? 'bg-red-50 border-red-500 text-red-900 placeholder-red-700 focus:ring-red-500 focus:border-red-500 dark:bg-red-100 dark:border-red-400'
+      : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-blue-500 focus:ring-blue-500 focus-visible:border-blue-500 focus-visible:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500';
+  };
 
   // Edit modal
   const openModalForItem = (item: OrderItem) => {
@@ -114,6 +227,7 @@ const OrderPage = () => {
     setOpenEditModal(false);
     if (item) {
       updateOrCreateOrderItem(item);
+      setIsOrderItemsInvalid(false);
     }
     setCurrentOrderItem(undefined);
   };
@@ -142,7 +256,15 @@ const OrderPage = () => {
               </div>
             ))}
             {/* New Item Card */}
-            <OrderItemCardNew onSelect={openModalForNewItem} />
+            <OrderItemCardNew
+              onSelect={openModalForNewItem}
+              invalid={isOrderItemsInvalid}
+            />
+            {isOrderItemsInvalid && (
+              <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                Dodajte vsaj eno pico.
+              </p>
+            )}
           </div>
           <div>
             <h2 className="mb-2 text-xl">Naročnik</h2>
@@ -157,10 +279,19 @@ const OrderPage = () => {
               <input
                 type="text"
                 id="customerName"
-                className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 focus-visible:border-blue-500 focus-visible:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                {...register('customerName', {
+                  required: 'Vnesite ime naročnika.',
+                })}
+                onBlur={() => validateField('customerName')}
+                aria-invalid={errors.customerName ? 'true' : 'false'}
+                className={`block w-full rounded-lg border p-2.5 text-sm ${getFieldStyle(
+                  'customerName',
+                )}`}
                 placeholder="Ime naročnika"
-                required
               />
+              <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                {errors?.customerName?.message}
+              </p>
             </div>
             {/* Customer Address */}
             <div className="mb-4">
@@ -173,10 +304,19 @@ const OrderPage = () => {
               <input
                 type="text"
                 id="customerAddress"
-                className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 focus-visible:border-blue-500 focus-visible:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
+                {...register('deliveryAddress', {
+                  required: 'Vnesite naslov naročnika.',
+                })}
+                onBlur={() => validateField('deliveryAddress')}
+                aria-invalid={errors.deliveryAddress ? 'true' : 'false'}
+                className={`block w-full rounded-lg border p-2.5 text-sm ${getFieldStyle(
+                  'deliveryAddress',
+                )}`}
                 placeholder="Naslov naročnika"
-                required
               />
+              <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                {errors?.deliveryAddress?.message}
+              </p>
             </div>
             {/* Phone Number */}
             <div className="mb-4">
@@ -196,11 +336,23 @@ const OrderPage = () => {
                 <input
                   type="text"
                   id="customerPhoneNumber"
-                  className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 focus-visible:border-blue-500 focus-visible:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
-                  pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
-                  placeholder="000-000-000"
+                  {...register('phoneNumber', {
+                    pattern: {
+                      value: /[0-9]{3} [0-9]{3} [0-9]{3}/,
+                      message: 'Vnesite veljaven telefonski format.',
+                    },
+                  })}
+                  onBlur={() => validateField('phoneNumber')}
+                  aria-invalid={errors.phoneNumber ? 'true' : 'false'}
+                  className={`block w-full rounded-lg border p-2.5 ps-10 text-sm ${getFieldStyle(
+                    'phoneNumber',
+                  )}`}
+                  placeholder="031 000 000"
                 />
               </div>
+              <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                {errors?.phoneNumber?.message}
+              </p>
             </div>
             {/* Payment Method */}
             <div>
@@ -211,83 +363,134 @@ const OrderPage = () => {
                 Način plačila
               </label>
               {/* Payment - Cash */}
-              <div className="mb-2 flex items-center rounded border border-gray-200 ps-4 dark:border-gray-700">
+              <div className="mb-2 flex items-center rounded border border-gray-200 p-4 ps-4 dark:border-gray-700">
                 <input
-                  checked
                   id="paymentMethod-2"
                   type="radio"
-                  value=""
-                  name="paymentMethod"
+                  value="cash"
+                  {...register('paymentMethod', { required: true })}
                   className="h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
                 />
                 <label
                   htmlFor="paymentMethod-2"
-                  className="ms-2 w-full py-4 text-sm font-medium text-gray-900 dark:text-gray-200"
+                  className="ms-2 w-full text-sm font-medium text-gray-900 dark:text-gray-200"
                 >
                   Gotovina
                 </label>
               </div>
               {/* Payment - Credit Card */}
-              <div className="flex items-center rounded border border-gray-200 pe-4 ps-4 dark:border-gray-700">
+              <div className="flex items-start rounded border border-gray-200 p-4 dark:border-gray-700">
                 <input
                   id="paymentMethod-1"
                   type="radio"
-                  value=""
-                  name="paymentMethod"
+                  value="card"
+                  {...register('paymentMethod', { required: true })}
                   className="h-4 w-4 border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
                 />
                 <label
                   htmlFor="paymentMethod-1"
-                  className="ms-2 flex flex-1 flex-wrap items-center py-4"
+                  className="ms-2 flex flex-wrap gap-2"
                 >
-                  <span className="me-4 text-sm font-medium text-gray-900 dark:text-gray-200">
+                  <span className="text-sm font-medium leading-4 text-gray-900 dark:text-gray-200">
                     Kartica
                   </span>
-                  {/* Credit Card Number */}
-                  <div className="me-2">
-                    <label htmlFor="creditCardNumber" className="sr-only">
-                      Številka kartice:
-                    </label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 start-0 top-0 flex items-center ps-3.5 text-gray-500">
-                        <MdCreditCard />
+                  <div className="flex flex-wrap gap-2">
+                    {/* Credit Card Number */}
+                    <div>
+                      <label htmlFor="creditCardNumber" className="sr-only">
+                        Številka kartice:
+                      </label>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 start-0 top-0 flex items-center ps-3.5 text-gray-500">
+                          <MdCreditCard />
+                        </div>
+                        <input
+                          type="text"
+                          id="creditCardNumber"
+                          {...register('creditCard.number', {
+                            required:
+                              isCreditCardChecked &&
+                              'Vnesite številko kartice.',
+                            pattern: {
+                              value: /[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}/,
+                              message: 'Vnesite veljaven format.',
+                            },
+                          })}
+                          onBlur={() => validateCreditCardFields()}
+                          aria-invalid={
+                            errors?.creditCard?.number ? 'true' : 'false'
+                          }
+                          className={`block w-56 rounded-lg border p-2.5 ps-10 text-sm ${getCreditCardFieldStyle(
+                            'number',
+                          )}`}
+                          placeholder="0000-0000-0000-0000"
+                        />
                       </div>
-                      <input
-                        type="text"
-                        id="creditCardNumber"
-                        className="block w-56 rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 focus-visible:border-blue-500 focus-visible:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
-                        pattern="[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}"
-                        placeholder="0000-0000-0000-0000"
-                      />
+                      <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                        {errors?.creditCard?.number?.message}
+                      </p>
                     </div>
-                  </div>
-                  <div className="me-2">
-                    <label htmlFor="creditCardExpiration" className="sr-only">
-                      Datum poteka kartice:
-                    </label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 start-0 top-0 flex items-center ps-3.5 text-gray-500">
-                        <MdCalendarMonth />
+                    <div className="flex gap-2">
+                      <div>
+                        <label
+                          htmlFor="creditCardExpiration"
+                          className="sr-only"
+                        >
+                          Datum poteka kartice:
+                        </label>
+                        <div className="relative">
+                          <div className="pointer-events-none absolute inset-y-0 start-0 top-0 flex items-center ps-3.5 text-gray-500">
+                            <MdCalendarMonth />
+                          </div>
+                          <input
+                            type="text"
+                            id="creditCardExpiration"
+                            {...register('creditCard.expiration', {
+                              required: isCreditCardChecked && 'Vnesite datum.',
+                              pattern: {
+                                value: /[0-9]{2}\/[0-9]{2}/,
+                                message: 'Vnesite veljaven format.',
+                              },
+                            })}
+                            onBlur={() => validateCreditCardFields()}
+                            aria-invalid={
+                              errors?.creditCard?.expiration ? 'true' : 'false'
+                            }
+                            className={`block w-24 rounded-lg border p-2.5 ps-10 text-sm ${getCreditCardFieldStyle(
+                              'expiration',
+                            )}`}
+                            pattern="[0-9]{2}/[0-9]{2}"
+                            placeholder="12/23"
+                          />
+                        </div>
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                          {errors?.creditCard?.expiration?.message}
+                        </p>
                       </div>
-                      <input
-                        type="text"
-                        id="creditCardExpiration"
-                        className="block w-24 rounded-lg border border-gray-300 bg-gray-50 p-2.5 ps-10 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 focus-visible:border-blue-500 focus-visible:ring-blue-500  dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
-                        pattern="[0-9]{2}/[0-9]{2}"
-                        placeholder="12/23"
-                      />
+                      <div>
+                        <label htmlFor="creditCardCVV" className="sr-only">
+                          Koda CVV:
+                        </label>
+                        <input
+                          type="number"
+                          id="creditCardCVV"
+                          {...register('creditCard.cvv', {
+                            required: isCreditCardChecked && 'Vnesite CVV.',
+                          })}
+                          onBlur={() => validateCreditCardFields()}
+                          aria-invalid={
+                            errors?.creditCard?.cvv ? 'true' : 'false'
+                          }
+                          className={`block w-20 rounded-lg border p-2.5 text-sm ${getCreditCardFieldStyle(
+                            'cvv',
+                          )}`}
+                          placeholder="CVV"
+                        />
+                        <p className="mt-2 text-sm text-red-600 dark:text-red-500">
+                          {errors?.creditCard?.cvv?.message}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label htmlFor="creditCardCVV" className="sr-only">
-                      Koda CVV:
-                    </label>
-                    <input
-                      type="number"
-                      id="creditCardCVV"
-                      className="block w-20 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
-                      placeholder="CVV"
-                    />
                   </div>
                 </label>
               </div>
@@ -297,14 +500,15 @@ const OrderPage = () => {
             <h2 className="mb-2 text-xl">Opomba</h2>
             <div>
               <label
-                htmlFor="message"
+                htmlFor="note"
                 className="sr-only mb-2 block text-sm font-medium text-gray-900 dark:text-white"
               >
                 Opomba
               </label>
               <textarea
-                id="message"
+                id="note"
                 rows={4}
+                {...register('note')}
                 className="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-blue-500 dark:focus:ring-blue-500"
                 placeholder="Dodajte opombo na naročilo..."
               ></textarea>
@@ -330,12 +534,16 @@ const OrderPage = () => {
 
         {/* Summary Sidebar */}
         <div
-          className={`absolute inset-y-0 right-0 z-40 transform sm:z-0 ${
+          className={`absolute inset-y-0 right-0 z-40 transform overflow-y-auto sm:z-0 ${
             isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
           } transition-transform duration-300 ease-in-out sm:sticky sm:top-0 sm:col-span-5 sm:translate-x-0 md:col-span-4 lg:col-span-3`}
         >
-          <div className="h-full w-80 bg-white sm:w-auto">
-            <SummarySidebar order={currentOrder} />
+          <div className="flex h-full w-80 flex-col bg-white sm:w-auto">
+            <SummarySidebar
+              order={currentOrder}
+              editMode={true}
+              onConfirmOrder={finalizeOrder}
+            />
           </div>
         </div>
       </div>

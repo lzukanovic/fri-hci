@@ -1,13 +1,14 @@
-import { Order, PizzaType, Size } from '../context/OrderContext';
+import { round } from 'lodash';
+import { Order, PizzaType, Size, StatusType } from '../context/OrderContext';
 
 export const getCreditCardNumberDisplay = (order: Order) => {
-  if (!order?.creditCardNumber) return '';
-  const lastFourDigits = order.creditCardNumber.slice(-4);
+  if (!order?.creditCard?.number) return '';
+  const lastFourDigits = order.creditCard.number.slice(-4);
   return `**** **** **** ${lastFourDigits}`;
 };
 
 export const getPriceDifferenceDisplay = (price: number) => {
-  return (price >= 0 ? '+' : '') + Math.round(price * 100) / 100;
+  return (price >= 0 ? '+' : '') + round(price, 2);
 };
 
 export const getPizzaSizeText = (size: Size | undefined) => {
@@ -77,5 +78,24 @@ export const getToppingNameDisplay = (
       return 'Tuna';
     default:
       return 'Neznana sestavina';
+  }
+};
+
+export const getStatusNameDisplay = (status: StatusType | undefined) => {
+  switch (status) {
+    case 'created':
+      return 'Ustvarjeno';
+    case 'preparation':
+      return 'V pripravi';
+    case 'prepared':
+      return 'Pripravljeno';
+    case 'delivery':
+      return 'V dostavi';
+    case 'delivered':
+      return 'Dostavljeno';
+    case 'canceled':
+      return 'Preklicano';
+    default:
+      return 'Neznano';
   }
 };
