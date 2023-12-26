@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { v4 } from 'uuid';
+import dayjs from 'dayjs';
 
 type UUID = string;
 export type Size = 's' | 'm' | 'l';
@@ -127,26 +128,26 @@ const mockOrders: Order[] = [
     statuses: [
       {
         name: 'created',
-        createdAt: new Date('2023-12-25T19:55:23+0000'),
+        createdAt: dayjs().subtract(120, 'minute').toDate(),
       },
       {
         name: 'preparation',
-        createdAt: new Date('2023-12-25T20:00:23+0000'),
+        createdAt: dayjs().subtract(110, 'minute').toDate(),
       },
       {
         name: 'prepared',
-        createdAt: new Date('2023-12-25T20:30:23+0000'),
+        createdAt: dayjs().subtract(85, 'minute').toDate(),
       },
       {
         name: 'delivery',
-        createdAt: new Date('2023-12-25T20:33:23+0000'),
+        createdAt: dayjs().subtract(80, 'minute').toDate(),
       },
       {
         name: 'delivered',
-        createdAt: new Date('2023-12-25T21:20:23+0000'),
+        createdAt: dayjs().subtract(60, 'minute').toDate(),
       },
     ],
-    createdAt: new Date(),
+    createdAt: dayjs().subtract(120, 'minute').toDate(),
     note: 'Brez čebule',
   },
   {
@@ -202,14 +203,14 @@ const mockOrders: Order[] = [
     statuses: [
       {
         name: 'created',
-        createdAt: new Date('2023-12-25T19:55:23+0000'),
+        createdAt: dayjs().subtract(20, 'minute').toDate(),
       },
       {
         name: 'preparation',
-        createdAt: new Date('2023-12-25T20:00:23+0000'),
+        createdAt: dayjs().subtract(10, 'minute').toDate(),
       },
     ],
-    createdAt: new Date(),
+    createdAt: dayjs().subtract(20, 'minute').toDate(),
     note: 'Brez čebule',
   },
   {
@@ -280,10 +281,10 @@ const mockOrders: Order[] = [
     statuses: [
       {
         name: 'created',
-        createdAt: new Date('2023-12-25T20:33:23+0000'),
+        createdAt: dayjs().subtract(5, 'minute').toDate(),
       },
     ],
-    createdAt: new Date(),
+    createdAt: dayjs().subtract(5, 'minute').toDate(),
     note: 'Brez čebule',
   },
 ];
