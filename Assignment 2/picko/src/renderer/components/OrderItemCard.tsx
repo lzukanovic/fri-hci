@@ -8,6 +8,7 @@ import {
   getToppingNameDisplay,
 } from '../utils/display.util';
 import ConfirmModal from './ConfirmModal';
+import { Tooltip } from 'flowbite-react';
 
 interface OrderItemCardProps {
   item: OrderItem;
@@ -84,30 +85,41 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
           </h3>
           {/* Header Buttons */}
           <span className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={onDuplicateHandler}
-              className="inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
+            <Tooltip animation="duration-500" content="Podvoji izdelek">
+              <button
+                type="button"
+                onClick={onDuplicateHandler}
+                className="inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
+              >
+                <MdContentCopy />
+                <span className="sr-only">Podvojite izdelek</span>
+              </button>
+            </Tooltip>
+            <Tooltip animation="duration-500" content="Uredi izdelek">
+              <button
+                type="button"
+                onClick={() => onEdit(item)}
+                className="inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
+              >
+                <MdEdit />
+                <span className="sr-only">Uredite izdelek</span>
+              </button>
+            </Tooltip>
+            {/* Placement top on the last button (near the edge) triggers weird resize exception */}
+            <Tooltip
+              animation="duration-500"
+              content="Izbriši izdelek"
+              placement="left"
             >
-              <MdContentCopy />
-              <span className="sr-only">Podvojite izdelek</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onEdit(item)}
-              className="inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
-            >
-              <MdEdit />
-              <span className="sr-only">Uredite izdelek</span>
-            </button>
-            <button
-              type="button"
-              onClick={onDeleteHandler}
-              className="inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
-            >
-              <MdDelete />
-              <span className="sr-only">Odstranite izdelek</span>
-            </button>
+              <button
+                type="button"
+                onClick={onDeleteHandler}
+                className="inline-flex items-center rounded-lg bg-white p-3 text-center font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-800"
+              >
+                <MdDelete />
+                <span className="sr-only">Odstranite izdelek</span>
+              </button>
+            </Tooltip>
           </span>
         </span>
         <div className="font-normal text-gray-700 dark:text-gray-400">

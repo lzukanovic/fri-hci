@@ -236,10 +236,10 @@ const OrderPage = () => {
     <>
       <div
         className="relative grid h-screen grid-cols-12 overflow-hidden bg-white dark:bg-gray-800 dark:text-white"
-        style={{ height: `calc(100vh - 73px` }}
+        style={{ height: `calc(100vh - 69px` }}
       >
         {/* Main Content */}
-        <div className="col-span-12 space-y-8 overflow-y-auto p-4 sm:col-span-7 md:col-span-8 lg:col-span-9">
+        <div className="col-span-12 space-y-6 overflow-y-auto p-4 sm:col-span-7 md:col-span-8 lg:col-span-9">
           <h1 className="text-2xl font-semibold">Novo naročilo</h1>
 
           <div className="space-y-2">

@@ -290,9 +290,22 @@ const mockOrders: Order[] = [
 ];
 
 export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>(
+    (window.electron.store.get('orders') as Order[]) || mockOrders,
+  );
+
+  window.electron.ipcRenderer.on('reset-data-trigger', () => {
+    setOrders(mockOrders);
+    window.electron.store.set('orders', null);
+  });
+  window.electron.ipcRenderer.on('clear-data-trigger', () => {
+    setOrders([]);
+    window.electron.store.set('orders', null);
+  });
+
   const addOrder = (newOrder: Order) => {
     setOrders([...orders, newOrder]);
+    window.electron.store.set('orders', orders);
   };
   const updateOrder = (updatedOrder: Order) => {
     setOrders((prevOrders) =>
@@ -300,6 +313,7 @@ export const OrderProvider = ({ children }: { children: React.ReactNode }) => {
         order.id === updatedOrder.id ? updatedOrder : order,
       ),
     );
+    window.electron.store.set('orders', orders);
   };
 
   const allOrders = orders;

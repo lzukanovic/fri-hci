@@ -2,7 +2,11 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
-export type Channels = 'ipc-example';
+export type Channels =
+  | 'ipc-example'
+  | 'change-theme'
+  | 'reset-data-trigger'
+  | 'clear-data-trigger';
 
 const electronHandler = {
   ipcRenderer: {
@@ -20,6 +24,14 @@ const electronHandler = {
     },
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
+    },
+  },
+  store: {
+    get(key: string) {
+      return ipcRenderer.sendSync('electron-store-get', key);
+    },
+    set(property: string, val: any) {
+      ipcRenderer.send('electron-store-set', property, val);
     },
   },
 };

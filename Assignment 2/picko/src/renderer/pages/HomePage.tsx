@@ -1,27 +1,40 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Order, Status, useOrderContext } from '../context/OrderContext';
 import SummarySidebar from '../components/SummarySidebar';
 import OrderCard from '../components/OrderCard';
+import useWindowSize from '../hooks/useWindowSize';
 
 const HomePage = () => {
-  const navigate = useNavigate();
+  const { width } = useWindowSize();
   const { activeOrders, completedOrders, updateOrder } = useOrderContext();
   const [selectedOrder, setSelectedOrder] = useState<Order>();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-  const toggleSelectedOrder = (order: Order) => {
+
+  const smBreakpoint = 640;
+
+  const handleSelectOrder = (order: Order) => {
     if (order.id === selectedOrder?.id) {
       setSelectedOrder(undefined);
+      if (width && width <= smBreakpoint) {
+        setIsSidebarOpen(false);
+      }
     } else {
       setSelectedOrder(order);
+      if (width && width <= smBreakpoint) {
+        setIsSidebarOpen(true);
+      }
     }
   };
+
+  const closeSidebar = () => {
+    setSelectedOrder(undefined);
+    setIsSidebarOpen(false);
+  };
+
   const isSelected = (order: Order) => {
     return order.id === selectedOrder?.id;
   };
+
   // Add new canceled status to selected order and update it in context
   const cancelSelectedOrder = () => {
     if (selectedOrder && selectedOrder.statuses) {
@@ -44,10 +57,10 @@ const HomePage = () => {
   return (
     <div
       className="relative grid h-screen grid-cols-12 overflow-hidden bg-white dark:bg-gray-800 dark:text-white"
-      style={{ height: `calc(100vh - 73px` }}
+      style={{ height: `calc(100vh - 69px` }}
     >
       {/* Main Content */}
-      <div className="col-span-12 space-y-8 overflow-y-auto p-4 sm:col-span-7 md:col-span-8 lg:col-span-9">
+      <div className="col-span-12 space-y-6 overflow-y-auto p-4 sm:col-span-7 md:col-span-8 lg:col-span-9">
         {/* Active Orders */}
         <h1 className="text-2xl font-semibold">Aktivna naročila</h1>
 
@@ -58,10 +71,15 @@ const HomePage = () => {
               key={index}
               order={order}
               isSelected={isSelected(order)}
-              onClick={(o) => toggleSelectedOrder(o)}
+              onClick={(o) => handleSelectOrder(o)}
             />
           ))}
         </div>
+
+        {/* No active orders */}
+        {activeOrders.length === 0 && (
+          <p className="text-gray-500">Nobenih aktivnih naročil.</p>
+        )}
 
         {/* Completed Orders */}
         <h1 className="text-2xl font-semibold">Zaključena naročila</h1>
@@ -73,10 +91,15 @@ const HomePage = () => {
               key={index}
               order={order}
               isSelected={isSelected(order)}
-              onClick={(o) => toggleSelectedOrder(o)}
+              onClick={(o) => handleSelectOrder(o)}
             />
           ))}
         </div>
+
+        {/* No completed orders */}
+        {completedOrders.length === 0 && (
+          <p className="text-gray-500">Nobenih zaključenih naročil.</p>
+        )}
       </div>
 
       {/* Overlay */}
@@ -84,7 +107,7 @@ const HomePage = () => {
         className={`absolute inset-0 z-30 bg-black bg-opacity-50 transition-opacity sm:z-0 ${
           isSidebarOpen ? 'opacity-100' : 'opacity-0'
         } ${isSidebarOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        onClick={toggleSidebar}
+        onClick={closeSidebar}
       />
 
       {/* Summary Sidebar */}

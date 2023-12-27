@@ -4,7 +4,9 @@ import {
   shell,
   BrowserWindow,
   MenuItemConstructorOptions,
+  ipcMain,
 } from 'electron';
+import { Theme } from '../renderer/context/ThemeContext';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -13,9 +15,11 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;
+  currentTheme: Theme;
 
-  constructor(mainWindow: BrowserWindow) {
+  constructor(mainWindow: BrowserWindow, currentTheme: Theme) {
     this.mainWindow = mainWindow;
+    this.currentTheme = currentTheme;
   }
 
   buildMenu(): Menu {
@@ -57,11 +61,49 @@ export default class MenuBuilder {
       label: 'Picko',
       submenu: [
         {
-          label: 'About Picko Electron',
+          label: 'About Picko',
           selector: 'orderFrontStandardAboutPanel:',
         },
         { type: 'separator' },
-        { label: 'Services', submenu: [] },
+        {
+          label: 'Theme',
+          submenu: [
+            {
+              label: 'System',
+              type: 'radio',
+              checked: this.currentTheme === 'system',
+              click: () => {
+                this.mainWindow.webContents.send('change-theme', 'system');
+              },
+            },
+            {
+              label: 'Light',
+              type: 'radio',
+              checked: this.currentTheme === 'light',
+              click: () => {
+                this.mainWindow.webContents.send('change-theme', 'light');
+              },
+            },
+            {
+              label: 'Dark',
+              type: 'radio',
+              checked: this.currentTheme === 'dark',
+              click: () => {
+                this.mainWindow.webContents.send('change-theme', 'dark');
+              },
+            },
+          ],
+        },
+        { type: 'separator' },
+        {
+          label: 'Reset Data...',
+          click: () => ipcMain.emit('reset-data'),
+        },
+        {
+          label: 'Delete All Data...',
+          click: () => ipcMain.emit('clear-data'),
+        },
+        // { label: 'Services', submenu: [] },
         { type: 'separator' },
         {
           label: 'Hide',
@@ -151,37 +193,37 @@ export default class MenuBuilder {
         { label: 'Bring All to Front', selector: 'arrangeInFront:' },
       ],
     };
-    const subMenuHelp: MenuItemConstructorOptions = {
-      label: 'Help',
-      submenu: [
-        {
-          label: 'Learn More',
-          click() {
-            shell.openExternal('https://electronjs.org');
-          },
-        },
-        {
-          label: 'Documentation',
-          click() {
-            shell.openExternal(
-              'https://github.com/electron/electron/tree/main/docs#readme',
-            );
-          },
-        },
-        {
-          label: 'Community Discussions',
-          click() {
-            shell.openExternal('https://www.electronjs.org/community');
-          },
-        },
-        {
-          label: 'Search Issues',
-          click() {
-            shell.openExternal('https://github.com/electron/electron/issues');
-          },
-        },
-      ],
-    };
+    // const subMenuHelp: MenuItemConstructorOptions = {
+    //   label: 'Help',
+    //   submenu: [
+    //     {
+    //       label: 'Learn More',
+    //       click() {
+    //         shell.openExternal('https://electronjs.org');
+    //       },
+    //     },
+    //     {
+    //       label: 'Documentation',
+    //       click() {
+    //         shell.openExternal(
+    //           'https://github.com/electron/electron/tree/main/docs#readme',
+    //         );
+    //       },
+    //     },
+    //     {
+    //       label: 'Community Discussions',
+    //       click() {
+    //         shell.openExternal('https://www.electronjs.org/community');
+    //       },
+    //     },
+    //     {
+    //       label: 'Search Issues',
+    //       click() {
+    //         shell.openExternal('https://github.com/electron/electron/issues');
+    //       },
+    //     },
+    //   ],
+    // };
 
     const subMenuView =
       process.env.NODE_ENV === 'development' ||
@@ -189,7 +231,7 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow, subMenuHelp];
+    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow];
   }
 
   buildDefaultTemplate() {
@@ -200,6 +242,14 @@ export default class MenuBuilder {
           {
             label: '&Open',
             accelerator: 'Ctrl+O',
+          },
+          {
+            label: '&Reset Data...',
+            click: () => ipcMain.emit('reset-data'),
+          },
+          {
+            label: '&Delete All Data...',
+            click: () => ipcMain.emit('clear-data'),
           },
           {
             label: '&Close',
@@ -252,37 +302,37 @@ export default class MenuBuilder {
                 },
               ],
       },
-      {
-        label: 'Help',
-        submenu: [
-          {
-            label: 'Learn More',
-            click() {
-              shell.openExternal('https://electronjs.org');
-            },
-          },
-          {
-            label: 'Documentation',
-            click() {
-              shell.openExternal(
-                'https://github.com/electron/electron/tree/main/docs#readme',
-              );
-            },
-          },
-          {
-            label: 'Community Discussions',
-            click() {
-              shell.openExternal('https://www.electronjs.org/community');
-            },
-          },
-          {
-            label: 'Search Issues',
-            click() {
-              shell.openExternal('https://github.com/electron/electron/issues');
-            },
-          },
-        ],
-      },
+      // {
+      //   label: 'Help',
+      //   submenu: [
+      //     {
+      //       label: 'Learn More',
+      //       click() {
+      //         shell.openExternal('https://electronjs.org');
+      //       },
+      //     },
+      //     {
+      //       label: 'Documentation',
+      //       click() {
+      //         shell.openExternal(
+      //           'https://github.com/electron/electron/tree/main/docs#readme',
+      //         );
+      //       },
+      //     },
+      //     {
+      //       label: 'Community Discussions',
+      //       click() {
+      //         shell.openExternal('https://www.electronjs.org/community');
+      //       },
+      //     },
+      //     {
+      //       label: 'Search Issues',
+      //       click() {
+      //         shell.openExternal('https://github.com/electron/electron/issues');
+      //       },
+      //     },
+      //   ],
+      // },
     ];
 
     return templateDefault;

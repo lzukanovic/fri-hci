@@ -9,11 +9,13 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import Store from 'electron-store';
+import { Theme } from '../renderer/context/ThemeContext';
 
 class AppUpdater {
   constructor() {
@@ -24,11 +26,62 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+const store = new Store();
+let currentTheme: Theme = (store.get('theme') as Theme) ?? 'system';
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
+});
+// Rebuild menu on theme change
+ipcMain.on('change-theme', (event, arg) => {
+  currentTheme = (arg[0] as Theme) ?? 'system';
+  if (mainWindow) {
+    const menuBuilder = new MenuBuilder(mainWindow, currentTheme);
+    menuBuilder.buildMenu();
+  }
+});
+// Clear all data stored in electron-store
+ipcMain.on('reset-data', async () => {
+  if (mainWindow) {
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Da, ponastavi', 'Prekliči'],
+      defaultId: 1,
+      title: 'Ponastavitev podatkov aplikacije',
+      message:
+        'Ali ste prepričani, da želite ponastaviti vse podatke o naročilih na prvotno stanje?',
+    });
+
+    if (result.response === 0) {
+      mainWindow.webContents.send('reset-data-trigger');
+    }
+  }
+});
+// Clear all data stored in electron-store
+ipcMain.on('clear-data', async () => {
+  if (mainWindow) {
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Da, izbriši', 'Prekliči'],
+      defaultId: 1,
+      title: 'Izbris podatkov aplikacije',
+      message:
+        'Ali ste prepričani, da želite izbrisati vse podatke o naročilih?',
+    });
+
+    if (result.response === 0) {
+      mainWindow.webContents.send('clear-data-trigger');
+    }
+  }
+});
+// Electron store get/set
+ipcMain.on('electron-store-get', async (event, val) => {
+  event.returnValue = store.get(val);
+});
+ipcMain.on('electron-store-set', async (event, key, val) => {
+  store.set(key, val);
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -98,7 +151,7 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  const menuBuilder = new MenuBuilder(mainWindow);
+  const menuBuilder = new MenuBuilder(mainWindow, currentTheme);
   menuBuilder.buildMenu();
 
   // Open urls in the user's browser

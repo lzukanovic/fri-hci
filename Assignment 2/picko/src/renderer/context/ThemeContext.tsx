@@ -27,8 +27,14 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [theme, setTheme] = useState<Theme>(
-    (localStorage.getItem('theme') as Theme) || 'system',
+    (window.electron.store.get('theme') as Theme) || 'system',
   );
+
+  // Listen for theme change event sent from menu bar
+  // and update theme state in navbar component
+  window.electron.ipcRenderer.on('change-theme', (arg) => {
+    setTheme(arg as Theme);
+  });
 
   useEffect(() => {
     const updateThemeClass = (theme: Theme) => {
@@ -36,6 +42,11 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
       root.classList.remove('light', 'dark', 'system');
       root.classList.add(theme);
     };
+
+    // Save setting to store
+    window.electron.store.set('theme', theme);
+    // Send update event so that menu can update/rebuild
+    window.electron.ipcRenderer.sendMessage('change-theme', [theme]);
 
     // Listen for system preference changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -48,7 +59,6 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
     mediaQuery.addEventListener('change', handleChange);
 
     // Update the theme class on the root tag
-    console.log(theme);
     if (theme === 'system') {
       updateThemeClass(mediaQuery.matches ? 'dark' : 'light');
     } else {

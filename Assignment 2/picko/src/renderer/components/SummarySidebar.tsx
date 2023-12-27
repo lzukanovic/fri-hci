@@ -112,7 +112,7 @@ const SummarySidebar: React.FC<SummarySidebarProps> = ({
 
   return (
     <>
-      <div className="flex-grow space-y-8 overflow-y-auto border-l-[1px] border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+      <div className="flex-grow space-y-6 overflow-y-auto border-l-[1px] border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
         <h1 className="text-2xl font-semibold">Podrobnosti naročila</h1>
         {order && hasOrderData() ? (
           <>
