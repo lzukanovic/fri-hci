@@ -52,12 +52,14 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
     setPendingAction(null);
   };
 
-  const getModalActionText = () => {
+  const getModalMessageText = () => {
+    let actionText = '';
     if (pendingAction === 'duplicate') {
-      return 'podvojiti';
+      actionText = 'podvojiti';
     } else if (pendingAction === 'delete') {
-      return 'odstraniti';
+      actionText = 'odstraniti';
     }
+    return `Ali želite ${actionText} ta izdelek?`;
   };
 
   const getModalConfirmText = () => {
@@ -158,7 +160,7 @@ const OrderItemCard: React.FC<OrderItemCardProps> = ({
       <ConfirmModal
         show={openConfirmModal}
         onClose={onCloseConfirmModal}
-        actionText={getModalActionText()}
+        message={getModalMessageText()}
         confirmText={getModalConfirmText()}
         confirmColor={getModalConfirmColor()}
       />

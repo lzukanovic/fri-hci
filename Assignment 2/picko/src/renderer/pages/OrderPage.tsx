@@ -3,10 +3,9 @@ import {
   CreditCard,
   Order,
   OrderItem,
-  PaymentMethod,
   useOrderContext,
 } from '../context/OrderContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useBlocker } from 'react-router-dom';
 import SummarySidebar from '../components/SummarySidebar';
 import { MdCreditCard, MdCall, MdCalendarMonth } from 'react-icons/md';
 import OrderItemCardNew from '../components/OrderItemCardNew';
@@ -17,6 +16,7 @@ import { DEFAULT_TOPPINGS } from '../constants/topping.constant';
 import { v4 as uuidv4, NIL } from 'uuid';
 import { useForm } from 'react-hook-form';
 import { isEqual } from 'lodash';
+import ConfirmModal from '../components/ConfirmModal';
 
 // Add mock data to the order
 const mockOrder: Order = {
@@ -70,7 +70,7 @@ const OrderPage = () => {
     register,
     watch,
     trigger,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<Order>({
     defaultValues: {
       customerName: '',
@@ -95,6 +95,11 @@ const OrderPage = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+  let blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname,
+  );
 
   // Order Item Card Handlers
   const updateOrCreateOrderItem = (item: OrderItem) => {
@@ -551,6 +556,17 @@ const OrderPage = () => {
         item={currentOrderItem}
         show={openEditModal}
         onClose={onCloseEditModal}
+      />
+      <ConfirmModal
+        show={blocker.state === 'blocked'}
+        onClose={(confirm: boolean) =>
+          confirm
+            ? blocker && blocker.proceed?.()
+            : blocker && blocker.reset?.()
+        }
+        message="Imate neshranjene spremembe. Ali ste prepričani, da želite nadaljevati?"
+        confirmText="Nadaljuj"
+        confirmColor="red"
       />
     </>
   );

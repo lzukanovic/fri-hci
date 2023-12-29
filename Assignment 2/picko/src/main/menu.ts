@@ -95,14 +95,6 @@ export default class MenuBuilder {
           ],
         },
         { type: 'separator' },
-        {
-          label: 'Reset Data...',
-          click: () => ipcMain.emit('reset-data'),
-        },
-        {
-          label: 'Delete All Data...',
-          click: () => ipcMain.emit('clear-data'),
-        },
         // { label: 'Services', submenu: [] },
         { type: 'separator' },
         {
@@ -123,6 +115,25 @@ export default class MenuBuilder {
           click: () => {
             app.quit();
           },
+        },
+      ],
+    };
+    const subMenuFile: DarwinMenuItemConstructorOptions = {
+      label: 'File',
+      submenu: [
+        {
+          label: 'New Order',
+          accelerator: 'Cmd+N',
+          click: () => this.mainWindow.webContents.send('navigate', 'order'),
+        },
+        { type: 'separator' },
+        {
+          label: 'Reset Data...',
+          click: () => ipcMain.emit('reset-data'),
+        },
+        {
+          label: 'Delete All Data...',
+          click: () => ipcMain.emit('clear-data'),
         },
       ],
     };
@@ -231,7 +242,7 @@ export default class MenuBuilder {
         ? subMenuViewDev
         : subMenuViewProd;
 
-    return [subMenuAbout, subMenuEdit, subMenuView, subMenuWindow];
+    return [subMenuAbout, subMenuFile, subMenuEdit, subMenuView, subMenuWindow];
   }
 
   buildDefaultTemplate() {
@@ -240,8 +251,9 @@ export default class MenuBuilder {
         label: '&File',
         submenu: [
           {
-            label: '&Open',
-            accelerator: 'Ctrl+O',
+            label: '&New Order',
+            accelerator: 'Ctrl+N',
+            click: () => this.mainWindow.webContents.send('navigate', 'order'),
           },
           {
             label: '&Reset Data...',

@@ -6,7 +6,8 @@ export type Channels =
   | 'ipc-example'
   | 'change-theme'
   | 'reset-data-trigger'
-  | 'clear-data-trigger';
+  | 'clear-data-trigger'
+  | 'navigate';
 
 const electronHandler = {
   ipcRenderer: {

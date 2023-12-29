@@ -24,6 +24,13 @@ const Navbar = () => {
     : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300';
   const activeDropdownItemClass = 'text-blue-500 dark:text-blue-500';
 
+  // Listen for navigate event sent from menu bar
+  window.electron.ipcRenderer.on('navigate', (route) => {
+    if (route === 'order') {
+      navigate('/order');
+    }
+  });
+
   const ThemeToggleButton = () => {
     return (
       <Tooltip
