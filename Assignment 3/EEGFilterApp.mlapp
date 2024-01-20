@@ -1,0 +1,545 @@
+classdef EEGFilterAppLZ < matlab.apps.AppBase
+
+    % Properties that correspond to app components
+    properties (Access = public)
+        UIFigure                        matlab.ui.Figure
+        FileMenu                        matlab.ui.container.Menu
+        SaveMenu                        matlab.ui.container.Menu
+        ViewMenu                        matlab.ui.container.Menu
+        PlotSignalsTogetherMenu         matlab.ui.container.Menu
+        ClearPlotsMenu                  matlab.ui.container.Menu
+        GridLayout                      matlab.ui.container.GridLayout
+        LeftPanel                       matlab.ui.container.Panel
+        GridLayout3                     matlab.ui.container.GridLayout
+        ConfigureFilterPanel            matlab.ui.container.Panel
+        FilterDropDownLabel             matlab.ui.control.Label
+        FilterDropDown                  matlab.ui.control.DropDown
+        LimitFrequencyLabel_4           matlab.ui.control.Label
+        FilterOrderEditField            matlab.ui.control.NumericEditField
+        LimitFrequencyLabel             matlab.ui.control.Label
+        FilterSingleFrequencyEditField  matlab.ui.control.NumericEditField
+        LimitFrequencyLabel_2           matlab.ui.control.Label
+        FilterStartFrequencyEditField   matlab.ui.control.NumericEditField
+        LimitFrequencyLabel_3           matlab.ui.control.Label
+        FilterEndFrequencyEditField     matlab.ui.control.NumericEditField
+        FilterButton                    matlab.ui.control.Button
+        ImportSignalDataPanel           matlab.ui.container.Panel
+        SubjectDropDown                 matlab.ui.control.DropDown
+        SubjectDropDown_3Label          matlab.ui.control.Label
+        RecordDropDown                  matlab.ui.control.DropDown
+        SignalnumberEditField           matlab.ui.control.NumericEditField
+        SignalnumberEditFieldLabel      matlab.ui.control.Label
+        LoadButton                      matlab.ui.control.Button
+        RecordDropDownLabel             matlab.ui.control.Label
+        RightPanel                      matlab.ui.container.Panel
+        GridLayout2                     matlab.ui.container.GridLayout
+        OriginalSignalUIAxes            matlab.ui.control.UIAxes
+        FilteredSignalUIAxes            matlab.ui.control.UIAxes
+    end
+
+    % Properties that correspond to apps with auto-reflow
+    properties (Access = private)
+        onePanelWidth = 576;
+    end
+
+    
+    properties (Access = public)
+        OriginalSignal % The selected EEG signal data
+        SampleFrequency % Frequency of samples for the signal
+        OriginalYLim % The y-axes scale from the original signal plot
+        FilteredSignal % The filtered EEG signal data
+        UseSameAxes = false % If plot both signals on same plot or not
+    end
+    
+    properties (Access = private)
+    end
+    
+    methods (Access = private)
+        
+        
+        function b = designFilter(app, filterType, filterOrder, frequency, fs)
+            N = filterOrder;
+
+            % design different types of filters
+            switch filterType
+                case 'Low-pass'
+                    fc = frequency;
+                    A = [1, 1, 0, 0];
+                    F = [0, fc, fc, fs/2] / (fs/2); 
+                    b = firls(N, F, A);
+                case 'High-pass'
+                    fc = frequency;
+                    A = [0, 0, 1, 1];
+                    F = [0, fc, fc, fs/2] / (fs/2); 
+                    b = firls(N, F, A);
+                case 'Band-pass'
+                    fcl = frequency(1);
+                    fcr = frequency(2);
+                    A = [0 0 1 1 0 0];
+                    F = [0 fcl fcl fcr fcr fs/2] / (fs / 2);
+                    b = firls(N, F, A);
+                case 'Band-stop'
+                    fcl = frequency(1);
+                    fcr = frequency(2);
+                    A = [1 1 0 0 1 1];
+                    F = [0 fcl fcl fcr fcr fs/2] / (fs / 2);
+                    b = firls(N, F, A);
+                otherwise
+                    b = 1; % Default to a pass-through filter
+            end
+        end
+        
+        function plotSignalsOnSameAxes(app)
+            % Set visibility
+            app.FilteredSignalUIAxes.Visible = 'off';
+            app.OriginalSignalUIAxes.Layout.Row = [1 2];
+            app.OriginalSignalUIAxes.Title.String = 'Original Signal vs. Filtered Signal';
+
+            % Clear existing axes
+            cla(app.OriginalSignalUIAxes);
+            cla(app.FilteredSignalUIAxes);
+        
+            % Plot both signals on one of the axes, e.g., OriginalSignalUIAxes
+            plot(app.OriginalSignalUIAxes, app.OriginalSignal);
+            hold(app.OriginalSignalUIAxes, 'on');
+            plot(app.OriginalSignalUIAxes, app.FilteredSignal);
+            hold(app.OriginalSignalUIAxes, 'off');
+        end
+        
+        function plotSignalsOnSeparateAxes(app)
+            % Set visibility
+            app.FilteredSignalUIAxes.Visible = 'on';
+            app.OriginalSignalUIAxes.Layout.Row = 1;
+            app.OriginalSignalUIAxes.Title.String = 'Original Signal';
+
+            % Plot original signal on the first axes
+            plot(app.OriginalSignalUIAxes, app.OriginalSignal);
+        
+            % Plot filtered signal on the second axes
+            plot(app.FilteredSignalUIAxes, app.FilteredSignal);
+        end
+        
+        function plotSignals(app)
+            if app.UseSameAxes
+                plotSignalsOnSameAxes(app);
+            else
+                plotSignalsOnSeparateAxes(app);
+            end
+        end
+    end
+    
+
+    % Callbacks that handle component events
+    methods (Access = private)
+
+        % Button pushed function: LoadButton
+        function onLoadSignalData(app, event)
+            % get input values
+            subject = app.SubjectDropDown.Value;
+            record = app.RecordDropDown.Value;
+            signal = app.SignalnumberEditField.Value;
+            
+            % check if selecter values point to valid recording
+            path = sprintf('data/%s/%s%s.edf', subject, subject, record);
+            if exist(path, 'file') ~= 2
+                msgbox(['The selected file couldn''t be found. Please make sure you have the following file structure: ' path],'File not found','modal');
+                return;
+            end
+
+            % import signal data
+            [sig, freq, tm] = rdsamp(path, 1:64);
+            sig1 = sig(:, num2str(signal));
+            
+            % save signal data to class properties
+            app.OriginalSignal = sig1;
+            app.SampleFrequency = freq;
+
+            % set frequency range limit
+            newMax = freq/2;
+            app.FilterSingleFrequencyEditField.Limits = [1, newMax];
+            app.FilterStartFrequencyEditField.Limits = [1, newMax];
+            app.FilterEndFrequencyEditField.Limits = [1, newMax];
+            
+            % plot original signal
+            % plot(app.OriginalSignalUIAxes, sig1);
+            plotSignals(app);
+            
+            % save plot y-axes scale
+            app.OriginalYLim = app.OriginalSignalUIAxes.YLim;
+
+            % enable button to filter original signal
+            app.FilterButton.Enable = "on";
+
+        end
+
+        % Value changed function: FilterDropDown
+        function onFilterTypeChange(app, event)
+            filterType = app.FilterDropDown.Value;
+
+            if strcmp(filterType, 'Low-pass') || strcmp(filterType, 'High-pass')
+                app.FilterSingleFrequencyEditField.Visible = "on";
+                app.LimitFrequencyLabel.Visible = "on";
+
+                app.FilterStartFrequencyEditField.Visible = "off";
+                app.LimitFrequencyLabel_2.Visible = "off";
+
+                app.FilterEndFrequencyEditField.Visible = "off";
+                app.LimitFrequencyLabel_3.Visible = "off";
+            else
+                app.FilterSingleFrequencyEditField.Visible = "off";
+                app.LimitFrequencyLabel.Visible = "off";
+
+                app.FilterStartFrequencyEditField.Visible = "on";
+                app.LimitFrequencyLabel_2.Visible = "on";
+
+                app.FilterEndFrequencyEditField.Visible = "on";
+                app.LimitFrequencyLabel_3.Visible = "on";
+            end
+        end
+
+        % Value changed function: FilterStartFrequencyEditField
+        function onFilterStartFrequencyChange(app, event)
+            newMin = app.FilterStartFrequencyEditField.Value;
+            currentMax = app.FilterEndFrequencyEditField.Limits(2);
+            app.FilterEndFrequencyEditField.Limits = [newMin, currentMax];
+        end
+
+        % Button pushed function: FilterButton
+        function onFilterSignal(app, event)
+            % get selected filter
+            filterType = app.FilterDropDown.Value;
+            
+            % get filter order
+            filterOrder = app.FilterOrderEditField.Value;
+            
+            % get filter frequency limit
+            if strcmp(filterType, 'Low-pass') || strcmp(filterType, 'High-pass')
+                frequency = app.FilterSingleFrequencyEditField.Value;
+            else
+                startFrequency = app.FilterStartFrequencyEditField.Value;
+                endFrequency = app.FilterEndFrequencyEditField.Value;
+                frequency = [startFrequency, endFrequency];
+            end
+
+            % design the filter
+            fs = app.SampleFrequency;
+            b = app.designFilter(filterType, filterOrder, frequency, fs);
+            
+            % apply the filter
+            filteredSig = filter(b, 1, app.OriginalSignal);
+
+            % save signal data
+            app.FilteredSignal = filteredSig;
+
+            % plot the filtered signal
+            % plot(app.FilteredSignalUIAxes, filteredSig);
+            plotSignals(app);
+
+            % apply same scale as original plot
+            app.FilteredSignalUIAxes.YLim = app.OriginalYLim;
+
+            % enable save option when result is available
+            app.SaveMenu.Enable = "on";
+        end
+
+        % Menu selected function: PlotSignalsTogetherMenu
+        function onPlotTogetherChange(app, event)
+            app.UseSameAxes = ~app.UseSameAxes;
+
+            if app.UseSameAxes
+                app.PlotSignalsTogetherMenu.Checked = 'on';
+            else
+                app.PlotSignalsTogetherMenu.Checked = 'off';
+            end
+            plotSignals(app);
+            % value = app.PlotTogetherCheckBox.Value;
+            % plotSignals(app, value);
+        end
+
+        % Menu selected function: ClearPlotsMenu
+        function onClearPlots(app, event)
+            cla(app.OriginalSignalUIAxes);
+            cla(app.FilteredSignalUIAxes);
+            app.FilterButton.Enable = "off";
+            app.SaveMenu.Enable = "off";
+        end
+
+        % Menu selected function: SaveMenu
+        function onSave(app, event)
+            [file,path] = uiputfile('*.mat', 'Save Filtered Signal As');
+            if isequal(file,0) || isequal(path,0)
+               disp('User clicked Cancel.');
+            else
+               filteredSignal = app.FilteredSignal;
+               save(fullfile(path,file), 'filteredSignal');
+            end
+        end
+
+        % Changes arrangement of the app based on UIFigure width
+        function updateAppLayout(app, event)
+            currentFigureWidth = app.UIFigure.Position(3);
+            if(currentFigureWidth <= app.onePanelWidth)
+                % Change to a 2x1 grid
+                app.GridLayout.RowHeight = {538, 538};
+                app.GridLayout.ColumnWidth = {'1x'};
+                app.RightPanel.Layout.Row = 2;
+                app.RightPanel.Layout.Column = 1;
+            else
+                % Change to a 1x2 grid
+                app.GridLayout.RowHeight = {'1x'};
+                app.GridLayout.ColumnWidth = {220, '1x'};
+                app.RightPanel.Layout.Row = 1;
+                app.RightPanel.Layout.Column = 2;
+            end
+        end
+    end
+
+    % Component initialization
+    methods (Access = private)
+
+        % Create UIFigure and components
+        function createComponents(app)
+
+            % Create UIFigure and hide until all components are created
+            app.UIFigure = uifigure('Visible', 'off');
+            app.UIFigure.AutoResizeChildren = 'off';
+            app.UIFigure.Position = [100 100 689 538];
+            app.UIFigure.Name = 'MATLAB App';
+            app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
+
+            % Create FileMenu
+            app.FileMenu = uimenu(app.UIFigure);
+            app.FileMenu.Text = 'File';
+
+            % Create SaveMenu
+            app.SaveMenu = uimenu(app.FileMenu);
+            app.SaveMenu.MenuSelectedFcn = createCallbackFcn(app, @onSave, true);
+            app.SaveMenu.Enable = 'off';
+            app.SaveMenu.Text = 'Save';
+
+            % Create ViewMenu
+            app.ViewMenu = uimenu(app.UIFigure);
+            app.ViewMenu.Text = 'View';
+
+            % Create PlotSignalsTogetherMenu
+            app.PlotSignalsTogetherMenu = uimenu(app.ViewMenu);
+            app.PlotSignalsTogetherMenu.MenuSelectedFcn = createCallbackFcn(app, @onPlotTogetherChange, true);
+            app.PlotSignalsTogetherMenu.Text = 'Plot Signals Together';
+
+            % Create ClearPlotsMenu
+            app.ClearPlotsMenu = uimenu(app.ViewMenu);
+            app.ClearPlotsMenu.MenuSelectedFcn = createCallbackFcn(app, @onClearPlots, true);
+            app.ClearPlotsMenu.Text = 'Clear Plots';
+
+            % Create GridLayout
+            app.GridLayout = uigridlayout(app.UIFigure);
+            app.GridLayout.ColumnWidth = {220, '1x'};
+            app.GridLayout.RowHeight = {'1x'};
+            app.GridLayout.ColumnSpacing = 0;
+            app.GridLayout.RowSpacing = 0;
+            app.GridLayout.Padding = [0 0 0 0];
+            app.GridLayout.Scrollable = 'on';
+
+            % Create LeftPanel
+            app.LeftPanel = uipanel(app.GridLayout);
+            app.LeftPanel.Layout.Row = 1;
+            app.LeftPanel.Layout.Column = 1;
+
+            % Create GridLayout3
+            app.GridLayout3 = uigridlayout(app.LeftPanel);
+            app.GridLayout3.ColumnWidth = {'1x'};
+            app.GridLayout3.RowSpacing = 40;
+
+            % Create ImportSignalDataPanel
+            app.ImportSignalDataPanel = uipanel(app.GridLayout3);
+            app.ImportSignalDataPanel.BorderType = 'none';
+            app.ImportSignalDataPanel.TitlePosition = 'centertop';
+            app.ImportSignalDataPanel.Title = 'Import Signal Data';
+            app.ImportSignalDataPanel.Layout.Row = 1;
+            app.ImportSignalDataPanel.Layout.Column = 1;
+
+            % Create RecordDropDownLabel
+            app.RecordDropDownLabel = uilabel(app.ImportSignalDataPanel);
+            app.RecordDropDownLabel.Position = [1 152 44 22];
+            app.RecordDropDownLabel.Text = 'Record';
+
+            % Create LoadButton
+            app.LoadButton = uibutton(app.ImportSignalDataPanel, 'push');
+            app.LoadButton.ButtonPushedFcn = createCallbackFcn(app, @onLoadSignalData, true);
+            app.LoadButton.Position = [1 1 198 23];
+            app.LoadButton.Text = 'Load';
+
+            % Create SignalnumberEditFieldLabel
+            app.SignalnumberEditFieldLabel = uilabel(app.ImportSignalDataPanel);
+            app.SignalnumberEditFieldLabel.Position = [1 116 83 22];
+            app.SignalnumberEditFieldLabel.Text = 'Signal number';
+
+            % Create SignalnumberEditField
+            app.SignalnumberEditField = uieditfield(app.ImportSignalDataPanel, 'numeric');
+            app.SignalnumberEditField.Limits = [1 64];
+            app.SignalnumberEditField.Tag = 'signalValue';
+            app.SignalnumberEditField.Position = [131 116 68 22];
+            app.SignalnumberEditField.Value = 1;
+
+            % Create RecordDropDown
+            app.RecordDropDown = uidropdown(app.ImportSignalDataPanel);
+            app.RecordDropDown.Items = {'R01', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08', 'R09', 'R10', 'R11', 'R12', 'R13', 'R14'};
+            app.RecordDropDown.Tag = 'recordValue';
+            app.RecordDropDown.Position = [62 152 137 22];
+            app.RecordDropDown.Value = 'R01';
+
+            % Create SubjectDropDown_3Label
+            app.SubjectDropDown_3Label = uilabel(app.ImportSignalDataPanel);
+            app.SubjectDropDown_3Label.Position = [1 188 46 22];
+            app.SubjectDropDown_3Label.Text = 'Subject';
+
+            % Create SubjectDropDown
+            app.SubjectDropDown = uidropdown(app.ImportSignalDataPanel);
+            app.SubjectDropDown.Items = {'S001', 'S002', 'S003', 'S004'};
+            app.SubjectDropDown.Tag = 'subjectValue';
+            app.SubjectDropDown.Position = [62 188 137 22];
+            app.SubjectDropDown.Value = 'S001';
+
+            % Create ConfigureFilterPanel
+            app.ConfigureFilterPanel = uipanel(app.GridLayout3);
+            app.ConfigureFilterPanel.BorderType = 'none';
+            app.ConfigureFilterPanel.TitlePosition = 'centertop';
+            app.ConfigureFilterPanel.Title = 'Configure Filter';
+            app.ConfigureFilterPanel.Layout.Row = 2;
+            app.ConfigureFilterPanel.Layout.Column = 1;
+
+            % Create FilterButton
+            app.FilterButton = uibutton(app.ConfigureFilterPanel, 'push');
+            app.FilterButton.ButtonPushedFcn = createCallbackFcn(app, @onFilterSignal, true);
+            app.FilterButton.Enable = 'off';
+            app.FilterButton.Position = [1 1 198 23];
+            app.FilterButton.Text = 'Filter';
+
+            % Create FilterEndFrequencyEditField
+            app.FilterEndFrequencyEditField = uieditfield(app.ConfigureFilterPanel, 'numeric');
+            app.FilterEndFrequencyEditField.Limits = [1 80];
+            app.FilterEndFrequencyEditField.ValueDisplayFormat = '%11.4g Hz';
+            app.FilterEndFrequencyEditField.Tag = 'filterEndFrequency';
+            app.FilterEndFrequencyEditField.Visible = 'off';
+            app.FilterEndFrequencyEditField.Position = [131 87 68 22];
+            app.FilterEndFrequencyEditField.Value = 1;
+
+            % Create LimitFrequencyLabel_3
+            app.LimitFrequencyLabel_3 = uilabel(app.ConfigureFilterPanel);
+            app.LimitFrequencyLabel_3.Visible = 'off';
+            app.LimitFrequencyLabel_3.Position = [1 87 86 22];
+            app.LimitFrequencyLabel_3.Text = 'End Frequency';
+
+            % Create FilterStartFrequencyEditField
+            app.FilterStartFrequencyEditField = uieditfield(app.ConfigureFilterPanel, 'numeric');
+            app.FilterStartFrequencyEditField.Limits = [1 80];
+            app.FilterStartFrequencyEditField.ValueDisplayFormat = '%11.4g Hz';
+            app.FilterStartFrequencyEditField.ValueChangedFcn = createCallbackFcn(app, @onFilterStartFrequencyChange, true);
+            app.FilterStartFrequencyEditField.Tag = 'filterStartFrequency';
+            app.FilterStartFrequencyEditField.Visible = 'off';
+            app.FilterStartFrequencyEditField.Position = [131 123 68 22];
+            app.FilterStartFrequencyEditField.Value = 1;
+
+            % Create LimitFrequencyLabel_2
+            app.LimitFrequencyLabel_2 = uilabel(app.ConfigureFilterPanel);
+            app.LimitFrequencyLabel_2.Visible = 'off';
+            app.LimitFrequencyLabel_2.Position = [1 123 91 22];
+            app.LimitFrequencyLabel_2.Text = 'Start Frequency';
+
+            % Create FilterSingleFrequencyEditField
+            app.FilterSingleFrequencyEditField = uieditfield(app.ConfigureFilterPanel, 'numeric');
+            app.FilterSingleFrequencyEditField.Limits = [1 80];
+            app.FilterSingleFrequencyEditField.ValueDisplayFormat = '%11.4g Hz';
+            app.FilterSingleFrequencyEditField.Tag = 'filterSingleFrequency';
+            app.FilterSingleFrequencyEditField.Position = [131 123 68 22];
+            app.FilterSingleFrequencyEditField.Value = 1;
+
+            % Create LimitFrequencyLabel
+            app.LimitFrequencyLabel = uilabel(app.ConfigureFilterPanel);
+            app.LimitFrequencyLabel.Position = [1 123 91 22];
+            app.LimitFrequencyLabel.Text = 'Limit Frequency';
+
+            % Create FilterOrderEditField
+            app.FilterOrderEditField = uieditfield(app.ConfigureFilterPanel, 'numeric');
+            app.FilterOrderEditField.Limits = [1 100];
+            app.FilterOrderEditField.Position = [131 155 68 22];
+            app.FilterOrderEditField.Value = 20;
+
+            % Create LimitFrequencyLabel_4
+            app.LimitFrequencyLabel_4 = uilabel(app.ConfigureFilterPanel);
+            app.LimitFrequencyLabel_4.Position = [1 155 69 22];
+            app.LimitFrequencyLabel_4.Text = 'Filter Range';
+
+            % Create FilterDropDown
+            app.FilterDropDown = uidropdown(app.ConfigureFilterPanel);
+            app.FilterDropDown.Items = {'Low-pass', 'High-pass', 'Band-pass', 'Band-stop'};
+            app.FilterDropDown.ValueChangedFcn = createCallbackFcn(app, @onFilterTypeChange, true);
+            app.FilterDropDown.Tag = 'filterTypeValue';
+            app.FilterDropDown.Position = [62 188 137 22];
+            app.FilterDropDown.Value = 'Low-pass';
+
+            % Create FilterDropDownLabel
+            app.FilterDropDownLabel = uilabel(app.ConfigureFilterPanel);
+            app.FilterDropDownLabel.Tag = 'filterTypeLabel';
+            app.FilterDropDownLabel.Position = [1 188 31 22];
+            app.FilterDropDownLabel.Text = 'Filter';
+
+            % Create RightPanel
+            app.RightPanel = uipanel(app.GridLayout);
+            app.RightPanel.Layout.Row = 1;
+            app.RightPanel.Layout.Column = 2;
+
+            % Create GridLayout2
+            app.GridLayout2 = uigridlayout(app.RightPanel);
+            app.GridLayout2.ColumnWidth = {'1x'};
+
+            % Create FilteredSignalUIAxes
+            app.FilteredSignalUIAxes = uiaxes(app.GridLayout2);
+            title(app.FilteredSignalUIAxes, 'Filtered Signal')
+            xlabel(app.FilteredSignalUIAxes, 'Sample')
+            ylabel(app.FilteredSignalUIAxes, 'Amplitude')
+            zlabel(app.FilteredSignalUIAxes, 'Z')
+            app.FilteredSignalUIAxes.Layout.Row = 2;
+            app.FilteredSignalUIAxes.Layout.Column = 1;
+            app.FilteredSignalUIAxes.Tag = 'filteredSignalPlot';
+
+            % Create OriginalSignalUIAxes
+            app.OriginalSignalUIAxes = uiaxes(app.GridLayout2);
+            title(app.OriginalSignalUIAxes, 'Original Signal')
+            xlabel(app.OriginalSignalUIAxes, 'Sample')
+            ylabel(app.OriginalSignalUIAxes, 'Amplitude')
+            zlabel(app.OriginalSignalUIAxes, 'Z')
+            app.OriginalSignalUIAxes.Layout.Row = 1;
+            app.OriginalSignalUIAxes.Layout.Column = 1;
+            app.OriginalSignalUIAxes.Tag = 'originalSignalPlot';
+
+            % Show the figure after all components are created
+            app.UIFigure.Visible = 'on';
+        end
+    end
+
+    % App creation and deletion
+    methods (Access = public)
+
+        % Construct app
+        function app = EEGFilterAppLZ
+
+            % Create UIFigure and components
+            createComponents(app)
+
+            % Register the app with App Designer
+            registerApp(app, app.UIFigure)
+
+            if nargout == 0
+                clear app
+            end
+        end
+
+        % Code that executes before app deletion
+        function delete(app)
+
+            % Delete UIFigure when app is deleted
+            delete(app.UIFigure)
+        end
+    end
+end
